@@ -4,30 +4,28 @@ defmodule ChatEmpresarial.Usuarios do
   def crear_usuario(nombre) do
     case GenServer.start_link(__MODULE__, nombre, name: String.to_atom(nombre)) do
       {:ok, _pid} ->
-        IO.puts("✅ Usuario #{nombre} creado")
+        IO.puts("Usuario #{nombre} creado")
         start(nombre)
       {:error, reason} ->
         IO.puts("Error al crear el usuario: #{reason}")
     end
   end
 
-  #Para reconectar un usuario existente
-  def reconectar_usuario(nombre) do
-    case GenServer.start_link(__MODULE__, nombre, name: String.to_atom(nombre)) do
-      {:ok, _pid} ->
-        IO.puts("✅ Usuario #{nombre} reconectado")
-        start(nombre)
+  def init(nombre) do
+    {:ok, %{nombre: nombre}}
+  end
+
+  def start(nombre) do
+    case GenServer.call({:global, Proyecto.Servidor}, {:connect, nombre, self()}) do
+      :ok ->
+        IO.puts("Bienvenido a la sala de chat, #{nombre}!")
+        comandos(nombre)
       {:error, reason} ->
-        IO.puts("Error al reconectar el usuario: #{reason}")
+        IO.puts("Error al entrar a la sala: #{reason}")
     end
   end
 
-  def lista_usuarios() do
-
-    GenServer.call(ChatEmpresarial.Servidor, :lista_usuarios)
-  end
-
-  def interactive_mode(nombre) do
+  def comandos(nombre) do
     IO.puts("""
     Escribe un comando para interactuar.
     /join nombre_sala               - Unirse a una sala de chat
@@ -44,17 +42,11 @@ defmodule ChatEmpresarial.Usuarios do
     listen(nombre)
   end
 
-  defp listen(%ChatEmpresarial.Usuarios{}= cliente) do
-
+  defp listen(nombre) do
     receive do
-      {:mensaje, mensaje} -> IO.puts("Nuevo mensaje: #{mensaje}") #espera un mensaje del servidor
-      listen(cliente)
-
-    after
-      1000->
-        comando= IO.gets(">") |> String.trim()  #si no hay mensajes, espera un comando
-        procesar_comando(comando, cliente)
-
+      {:mensaje, mensaje} ->
+        IO.puts(mensaje)
+        listen(nombre)
     end
   end
 
