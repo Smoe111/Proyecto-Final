@@ -1,23 +1,24 @@
 defmodule ChatEmpresarial.Usuarios do
+  use GenServer
 
-    @moduledoc """
-  Este módulo gestiona los usuarios conectados al programa y quienes se encuentran activos
-  """
-alias Erl2exVendored.Cli
+  def crear_usuario(nombre) do
+    case GenServer.start_link(__MODULE__, nombre, name: String.to_atom(nombre)) do
+      {:ok, _pid} ->
+        IO.puts("✅ Usuario #{nombre} creado")
+        start(nombre)
+      {:error, reason} ->
+        IO.puts("Error al crear el usuario: #{reason}")
+    end
+  end
 
-  defstruct [:nombre, :pid]
-
-  def usuario(nombre) do
-
-    cliente= %ChatEmpresarial.Usuarios{nombre: nombre, pid: self()}
-
-    case GenServer.call(ChatEmpresarial.Servidor, {:connect, nombre, cliente.pid }) do #corregir que encuentre el servidor como sea
-       :ok ->
-        IO.puts("Usuario #{nombre} conectado.")
-        comandos(cliente)
-
-        {:error, mensaje} ->
-          IO.puts("Error: #{mensaje}")
+  #Para reconectar un usuario existente
+  def reconectar_usuario(nombre) do
+    case GenServer.start_link(__MODULE__, nombre, name: String.to_atom(nombre)) do
+      {:ok, _pid} ->
+        IO.puts("✅ Usuario #{nombre} reconectado")
+        start(nombre)
+      {:error, reason} ->
+        IO.puts("Error al reconectar el usuario: #{reason}")
     end
   end
 
