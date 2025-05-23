@@ -50,69 +50,33 @@ defmodule ChatEmpresarial.Usuarios do
     end
   end
 
-  defp procesar_comando("/list", %ChatEmpresarial.Usuarios{}= cliente) do
-
-    usuarios= ChatEmpresarial.Usuarios.lista_usuarios()
-    IO.puts("Usuarios conectados:")
-    Enum.each(usuarios, fn usuario ->
-      IO.puts(" - #{usuario.nombre}")
-    end)
-    listen(cliente)
-
+  defp command_loop(nombre) do
+    comando = IO.gets("> ") |> String.trim()
+    case process_command(nombre, comando) do
+      :exit -> :ok
+      _ -> command_loop(nombre)
+    end
   end
 
-  defp procesar_comando("/join" <> sala, %ChatEmpresarial.Usuarios{}= cliente ) do
-
-    join_sala(cliente.nombre, sala)
-    IO.puts("Te has unido a la sala #{sala}")
-    listen(cliente)
-  end
-
-  defp procesar_comando("/create" <> sala, %ChatEmpresarial.Usuarios{}= cliente) do
-
-    create_sala(sala)
-    IO.puts("Se ha creado la sala #{sala}")
-    listen(cliente)
-  end
-
-  defp procesar_comando("/send" <> rest, %ChatEmpresarial.Usuarios{}= cliente) do
-
-    case String.split(rest, "", parts: 2) do
-      [mensaje, sala] ->
-        send_mensaje(mensaje, sala, cliente.nombre)
-        IO.puts("Mensaje enviado a la sala #{sala}: #{mensaje}")
-        listen(cliente)
-
+  defp process_command(nombre, comando) do
+    case String.split(comando, " ") do
+      ["/join", sala] ->
+        join_sala(nombre, sala)
+      ["/create", sala] ->
+        create_sala(sala)
+      ["/leave"] ->
+        leave_sala(nombre)
+      ["/history", sala] ->
+        history(sala)
+      ["/search", sala, palabra] ->
+        search(sala, palabra)
+      ["/list"] ->
+        list_users()
+      ["/exit"] ->
+        exit_chat(nombre)
       _ ->
-        IO.puts("Comando inválido. Usa /send [mensaje] [sala]")
-        listen(cliente)
+        IO.puts("Comando no reconocido")
     end
-  end
-
-  defp procesar_comando("/historial" <> sala, %ChatEmpresarial.Usuarios{}= cliente) do
-
-    case ChatEmpresarial.Historial.leer_historial(sala) do
-      mensajes when is_list(mensajes) ->
-        IO.puts("Historial de la sala #{sala}:")
-        Enum.each(mensajes, fn {hora, usuario, mensaje} -> IO.puts( "[ #{hora} ] - #{usuario}: #{mensaje}") end)
-    otro->
-      IO.puts("#{otro}") # cualquier error o string que no sea una lista
-    end
-    listen(cliente)
-
-  end
-
-  defp procesar_comando("/exit", %ChatEmpresarial.Usuarios{}= cliente) do
-
-    GenServer.cast(ChatEmpresarial.Servidor, {:disconnect, cliente.nombre})
-    IO.puts("Te has desconectado del chat.")
-    :ok
-  end
-
-  defp procesar_comando(_comando, %ChatEmpresarial.Usuarios{}= cliente) do
-
-    IO.puts("Comando inválido. Usa /list, /join [sala], /create [sala], /send [mensaje] [sala] o /exit.")
-    listen(cliente)
   end
 
   def create_sala(sala) do
