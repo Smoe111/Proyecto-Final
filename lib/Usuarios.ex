@@ -7,6 +7,8 @@ alias Erl2exVendored.Cli
 
   defstruct [:nombre, :pid]
 
+  #HOLA SOY TONOT
+
   def usuario(nombre) do
 
     cliente= %ChatEmpresarial.Usuarios{nombre: nombre, pid: self()}
