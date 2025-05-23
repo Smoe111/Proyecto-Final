@@ -26,18 +26,21 @@ alias Erl2exVendored.Cli
     GenServer.call(ChatEmpresarial.Servidor, :lista_usuarios)
   end
 
-  defp comandos(%ChatEmpresarial.Usuarios{}= cliente) do
-
-    IO.puts("Comandos disponibles:")
-    IO.puts(" /list  = Ver usuarios conectados")
-    IO.puts(" /join [sala]  = Unirse a una sala")
-    IO.puts(" /create [sala] = Crear una sala")
-    IO.puts(" /send [mensaje] [sala]= Enviar un mensaje a la sala")
-    IO.puts(" /historial [sala] = Ver el historial de la sala")
-    IO.puts(" /exit = Salir del chat")
-
-    listen(cliente)
-
+  def interactive_mode(nombre) do
+    IO.puts("""
+    Escribe un comando para interactuar.
+    /join nombre_sala               - Unirse a una sala de chat
+    /create nombre_sala             - Crear una nueva sala de chat
+    /leave                          - Abandonar la sala actual
+    /history nombre_sala            - Consultar historial de mensajes de una sala
+    /search nombre_sala palabra     - Buscar mensajes por palabra en una sala
+    /list                           - Mostrar usuarios conectados
+    /exit                           - Salir del chat
+    """)
+    # Proceso para leer comandos del usuario
+    spawn(fn -> command_loop(nombre) end)
+    # Proceso principal escucha mensajes en tiempo real
+    listen(nombre)
   end
 
   defp listen(%ChatEmpresarial.Usuarios{}= cliente) do
